@@ -44,7 +44,7 @@ export default function Landing() {
               Find Your <span className="text-pink-300 italic">Forever</span>
             </h1>
             <p className="text-xl md:text-2xl font-light mb-10 max-w-2xl mx-auto text-white/90">
-              Where meaningful connections blossom into beautiful stories. Join thousands of happy couples who found love here.
+              Where meaningful connections blossom into beautiful stories. Join thousands of happy couples who found love here...
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/auth">
