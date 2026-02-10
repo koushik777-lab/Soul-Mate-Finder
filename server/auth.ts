@@ -1,15 +1,13 @@
 import { IStorage } from "./storage";
-import { User, insertUserSchema, insertProfileSchema } from "@shared/schema";
+import { User, insertUserSchema } from "@shared/schema";
 import session from "express-session";
-import connectPg from "connect-pg-simple";
-import { pool } from "./db";
+import MongoStore from "connect-mongo";
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
 
-const PostgresSessionStore = connectPg(session);
 const scryptAsync = promisify(scrypt);
 
 async function hashPassword(password: string) {
@@ -27,9 +25,9 @@ async function comparePasswords(supplied: string, stored: string) {
 
 export function setupAuth(app: any) {
   const sessionSettings: session.SessionOptions = {
-    store: new PostgresSessionStore({
-      pool,
-      createTableIfMissing: true,
+    store: MongoStore.create({
+      mongoUrl: process.env.MONGODB_URI,
+      ttl: 14 * 24 * 60 * 60 // = 14 days. Default
     }),
     secret: process.env.SESSION_SECRET || "super secret session secret",
     resave: false,
@@ -68,7 +66,10 @@ export function setupAuth(app: any) {
   passport.serializeUser((user, done) => done(null, (user as User).id));
   passport.deserializeUser(async (id, done) => {
     try {
-      const user = await storage.getUser(id as number);
+      const user = await storage.getUser(id as string);
+      if (!user) {
+        return done(null, false);
+      }
       done(null, user);
     } catch (err) {
       done(err);

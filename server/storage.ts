@@ -1,153 +1,250 @@
-import { 
-  users, profiles, interests, messages,
-  type User, type InsertUser, type Profile, type Interest, type Message 
+import {
+  type User, type InsertUser, type Profile, type Interest, type Message
 } from "@shared/schema";
-import { db } from "./db";
-import { eq, ne, and, or, desc, gte, lte, sql } from "drizzle-orm";
+import { UserModel, ProfileModel, InterestModel, MessageModel } from "./models";
 
 export interface IStorage {
-  getUser(id: number): Promise<User | undefined>;
+  getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   getAllUsers(): Promise<User[]>; // For admin
 
   // Profiles
   createProfile(profile: any): Promise<Profile>;
-  getProfile(id: number): Promise<Profile | undefined>;
-  getProfileByUserId(userId: number): Promise<Profile | undefined>;
+  getProfile(id: string): Promise<Profile | undefined>;
+  getProfileByUserId(userId: string): Promise<Profile | undefined>;
   listProfiles(filters: any): Promise<Profile[]>;
-  updateProfile(id: number, profile: Partial<Profile>): Promise<Profile>;
+  updateProfile(id: string, profile: Partial<Profile>): Promise<Profile>;
 
   // Interests
-  createInterest(senderId: number, receiverId: number): Promise<Interest>;
-  getInterests(userId: number, type: 'sent' | 'received'): Promise<{interest: Interest, profile: Profile}[]>;
-  updateInterestStatus(id: number, status: string): Promise<Interest | undefined>;
-  getInterestById(id: number): Promise<Interest | undefined>;
+  createInterest(senderId: string, receiverId: string): Promise<Interest>;
+  getInterests(userId: string, type: 'sent' | 'received' | 'matches'): Promise<{ interest: Interest, profile: Profile }[]>;
+  updateInterestStatus(id: string, status: string): Promise<Interest | undefined>;
+  getInterestById(id: string): Promise<Interest | undefined>;
 
   // Messages
-  createMessage(senderId: number, receiverId: number, content: string): Promise<Message>;
-  getMessages(userId1: number, userId2: number): Promise<Message[]>;
-  getConversations(userId: number): Promise<Profile[]>;
+  createMessage(senderId: string, receiverId: string, content: string): Promise<Message>;
+  getMessages(userId1: string, userId2: string): Promise<Message[]>;
+  getConversations(userId: string): Promise<Profile[]>;
 }
 
 export class DatabaseStorage implements IStorage {
-  async getUser(id: number): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user;
+  async getUser(id: string): Promise<User | undefined> {
+    try {
+      const user = await UserModel.findById(id);
+      return user ? this.mapUser(user) : undefined;
+    } catch {
+      return undefined;
+    }
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.username, username));
-    return user;
+    const user = await UserModel.findOne({ username });
+    return user ? this.mapUser(user) : undefined;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const [user] = await db.insert(users).values(insertUser).returning();
-    return user;
+    const user = await UserModel.create(insertUser);
+    return this.mapUser(user);
   }
 
   async getAllUsers(): Promise<User[]> {
-    return await db.select().from(users);
+    const users = await UserModel.find();
+    return users.map(this.mapUser);
   }
 
   // Profiles
   async createProfile(profile: any): Promise<Profile> {
-    const [newProfile] = await db.insert(profiles).values(profile).returning();
-    return newProfile;
+    const newProfile = await ProfileModel.create(profile);
+    return this.mapProfile(newProfile);
   }
 
-  async getProfile(id: number): Promise<Profile | undefined> {
-    const [profile] = await db.select().from(profiles).where(eq(profiles.id, id));
-    return profile;
+  async getProfile(id: string): Promise<Profile | undefined> {
+    // Mongoose findById(id) expects an ObjectId.
+    // If the ID passed is invalid length/format, it might throw.
+    // We'll wrap in try-catch or just define it's valid.
+    try {
+      const profile = await ProfileModel.findById(id);
+      return profile ? this.mapProfile(profile) : undefined;
+    } catch {
+      return undefined;
+    }
   }
 
-  async getProfileByUserId(userId: number): Promise<Profile | undefined> {
-    const [profile] = await db.select().from(profiles).where(eq(profiles.userId, userId));
-    return profile;
+  async getProfileByUserId(userId: string): Promise<Profile | undefined> {
+    const profile = await ProfileModel.findOne({ userId });
+    return profile ? this.mapProfile(profile) : undefined;
   }
 
   async listProfiles(filters: any = {}): Promise<Profile[]> {
-    const conditions = [];
-    if (filters.gender) conditions.push(eq(profiles.gender, filters.gender));
-    if (filters.religion) conditions.push(eq(profiles.religion, filters.religion));
-    if (filters.city) conditions.push(eq(profiles.city, filters.city));
-    if (filters.ageMin) conditions.push(gte(profiles.age, filters.ageMin));
-    if (filters.ageMax) conditions.push(lte(profiles.age, filters.ageMax));
-    
-    // Exclude current user if passed in filters context? 
-    // Usually logic handles this, but let's keep it simple for now
-    
-    if (conditions.length > 0) {
-      return await db.select().from(profiles).where(and(...conditions));
+    const query: any = {};
+    if (filters.gender) query.gender = filters.gender;
+    if (filters.religion) query.religion = filters.religion;
+    if (filters.city) query.city = filters.city;
+
+    if (filters.ageMin || filters.ageMax) {
+      query.age = {};
+      if (filters.ageMin) query.age.$gte = filters.ageMin;
+      if (filters.ageMax) query.age.$lte = filters.ageMax;
     }
-    return await db.select().from(profiles);
+
+    const profiles = await ProfileModel.find(query);
+    return profiles.map(this.mapProfile);
   }
 
-  async updateProfile(id: number, update: Partial<Profile>): Promise<Profile> {
-    const [profile] = await db.update(profiles).set(update).where(eq(profiles.id, id)).returning();
-    return profile;
+  async updateProfile(id: string, update: Partial<Profile>): Promise<Profile> {
+    const profile = await ProfileModel.findByIdAndUpdate(id, update, { new: true });
+    if (!profile) throw new Error("Profile not found");
+    return this.mapProfile(profile);
   }
 
   // Interests
-  async createInterest(senderId: number, receiverId: number): Promise<Interest> {
-    const [interest] = await db.insert(interests).values({ senderId, receiverId }).returning();
-    return interest;
+  async createInterest(senderId: string, receiverId: string): Promise<Interest> {
+    const interest = await InterestModel.create({ senderId, receiverId });
+    return this.mapInterest(interest);
   }
 
-  async getInterests(userId: number, type: 'sent' | 'received'): Promise<{interest: Interest, profile: Profile}[]> {
-    const isSent = type === 'sent';
-    const joinTable = isSent ? interests.receiverId : interests.senderId;
-    
-    const results = await db.select({
-      interest: interests,
-      profile: profiles,
-    })
-    .from(interests)
-    .where(eq(isSent ? interests.senderId : interests.receiverId, userId))
-    .innerJoin(profiles, eq(profiles.userId, joinTable));
+  async getInterests(userId: string, type: 'sent' | 'received' | 'matches'): Promise<{ interest: Interest, profile: Profile }[]> {
+    if (type === 'matches') {
+      // Find all accepted interests where user is sender OR receiver
+      const sent = await InterestModel.find({ senderId: userId, status: 'accepted' });
+      const received = await InterestModel.find({ receiverId: userId, status: 'accepted' });
 
-    return results;
+      const results = [];
+
+      // Process sent (user matched with receiver)
+      for (const interest of sent) {
+        const profile = await this.getProfileByUserId(interest.receiverId);
+        if (profile) {
+          results.push({ interest: this.mapInterest(interest), profile });
+        }
+      }
+
+      // Process received (user matched with sender)
+      for (const interest of received) {
+        const profile = await this.getProfileByUserId(interest.senderId);
+        if (profile) {
+          results.push({ interest: this.mapInterest(interest), profile });
+        }
+      }
+
+      return results;
+    } else if (type === 'sent') {
+      const interests = await InterestModel.find({ senderId: userId });
+      const results = [];
+      for (const interest of interests) {
+        const profile = await this.getProfileByUserId(interest.receiverId);
+        if (profile) {
+          results.push({ interest: this.mapInterest(interest), profile });
+        }
+      }
+      return results;
+    } else {
+      const interests = await InterestModel.find({ receiverId: userId });
+      const results = [];
+      for (const interest of interests) {
+        const profile = await this.getProfileByUserId(interest.senderId);
+        if (profile) {
+          results.push({ interest: this.mapInterest(interest), profile });
+        }
+      }
+      return results;
+    }
   }
 
-  async updateInterestStatus(id: number, status: string): Promise<Interest | undefined> {
-    const [interest] = await db.update(interests).set({ status }).where(eq(interests.id, id)).returning();
-    return interest;
+  async updateInterestStatus(id: string, status: string): Promise<Interest | undefined> {
+    const interest = await InterestModel.findByIdAndUpdate(id, { status }, { new: true });
+    return interest ? this.mapInterest(interest) : undefined;
   }
 
-  async getInterestById(id: number): Promise<Interest | undefined> {
-    const [interest] = await db.select().from(interests).where(eq(interests.id, id));
-    return interest;
+  async getInterestById(id: string): Promise<Interest | undefined> {
+    try {
+      const interest = await InterestModel.findById(id);
+      return interest ? this.mapInterest(interest) : undefined;
+    } catch {
+      return undefined;
+    }
   }
 
   // Messages
-  async createMessage(senderId: number, receiverId: number, content: string): Promise<Message> {
-    const [message] = await db.insert(messages).values({ senderId, receiverId, content }).returning();
-    return message;
+  async createMessage(senderId: string, receiverId: string, content: string): Promise<Message> {
+    const message = await MessageModel.create({ senderId, receiverId, content });
+    return this.mapMessage(message);
   }
 
-  async getMessages(userId1: number, userId2: number): Promise<Message[]> {
-    return await db.select().from(messages)
-      .where(or(
-        and(eq(messages.senderId, userId1), eq(messages.receiverId, userId2)),
-        and(eq(messages.senderId, userId2), eq(messages.receiverId, userId1))
-      ))
-      .orderBy(messages.createdAt);
+  async getMessages(userId1: string, userId2: string): Promise<Message[]> {
+    const messages = await MessageModel.find({
+      $or: [
+        { senderId: userId1, receiverId: userId2 },
+        { senderId: userId2, receiverId: userId1 }
+      ]
+    }).sort({ createdAt: 1 });
+    return messages.map(this.mapMessage);
   }
 
-  async getConversations(userId: number): Promise<Profile[]> {
-    // Find all unique userIds communicated with
-    const sent = await db.selectDistinct({ id: messages.receiverId }).from(messages).where(eq(messages.senderId, userId));
-    const received = await db.selectDistinct({ id: messages.senderId }).from(messages).where(eq(messages.receiverId, userId));
-    
-    const ids = new Set([...sent.map(s => s.id), ...received.map(r => r.id)]);
+  async getConversations(userId: string): Promise<Profile[]> {
+    const sent = await MessageModel.distinct("receiverId", { senderId: userId });
+    const received = await MessageModel.distinct("senderId", { receiverId: userId });
+
+    const ids = new Set([...sent, ...received]);
     const profileList = [];
-    
-    for (const id of ids) {
-      const profile = await this.getProfileByUserId(id);
-      if (profile) profileList.push(profile);
+
+    for (const id of Array.from(ids)) {
+      if (typeof id === 'string') {
+        const profile = await this.getProfileByUserId(id);
+        if (profile) profileList.push(profile);
+      }
     }
-    
+
     return profileList;
+  }
+
+  // Helpers to map Mongoose documents to plain objects with string IDs
+  private mapUser(doc: any): User {
+    return {
+      id: doc._id.toString(),
+      username: doc.username,
+      password: doc.password,
+      isAdmin: doc.isAdmin
+    };
+  }
+
+  private mapProfile(doc: any): Profile {
+    return {
+      id: doc._id.toString(),
+      userId: doc.userId,
+      fullName: doc.fullName,
+      age: doc.age,
+      gender: doc.gender,
+      religion: doc.religion,
+      caste: doc.caste,
+      city: doc.city,
+      profession: doc.profession,
+      bio: doc.bio,
+      photoUrl: doc.photoUrl,
+      isVerified: doc.isVerified,
+      createdAt: doc.createdAt
+    };
+  }
+
+  private mapInterest(doc: any): Interest {
+    return {
+      id: doc._id.toString(),
+      senderId: doc.senderId,
+      receiverId: doc.receiverId,
+      status: doc.status,
+      createdAt: doc.createdAt
+    };
+  }
+
+  private mapMessage(doc: any): Message {
+    return {
+      id: doc._id.toString(),
+      senderId: doc.senderId,
+      receiverId: doc.receiverId,
+      content: doc.content,
+      createdAt: doc.createdAt
+    };
   }
 }
 

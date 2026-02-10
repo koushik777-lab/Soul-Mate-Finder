@@ -22,7 +22,7 @@ export function useProfiles(filters?: FilterParams) {
   });
 }
 
-export function useProfile(id: number) {
+export function useProfile(id: string) {
   return useQuery({
     queryKey: [api.profiles.get.path, id],
     queryFn: async () => {
@@ -59,13 +59,13 @@ export function useCreateProfile() {
         ...data,
         age: Number(data.age),
       };
-      
+
       const res = await fetch(api.profiles.create.path, {
         method: api.profiles.create.method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      
+
       if (!res.ok) {
         const error = await res.json();
         throw new Error(error.message || "Failed to create profile");

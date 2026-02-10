@@ -10,7 +10,7 @@ export default function Landing() {
     target: ref,
     offset: ["start start", "end start"]
   });
-  
+
   const y = useTransform(scrollYProgress, [0, 1], ["0%", "50%"]);
   const opacity = useTransform(scrollYProgress, [0, 1], [1, 0]);
 
@@ -19,13 +19,13 @@ export default function Landing() {
       {/* Hero Section */}
       <section ref={ref} className="relative h-screen flex items-center justify-center overflow-hidden">
         {/* Background Image with Parallax */}
-        <motion.div 
+        <motion.div
           style={{ y, opacity }}
           className="absolute inset-0 z-0"
         >
           {/* Couple at sunset holding hands */}
-          <img 
-            src="https://pixabay.com/get/g11620a195135edaf488b96371ac8e554086084736fb6f46165c8d03f3eca0cd6a660401d1015504a3a16e6a0c19e8e5d3d49a0e6bfbd616b8595a611571764f5_1280.jpg" 
+          <img
+            src="/hero_couple.png"
             alt="Romantic couple silhouette"
             className="w-full h-full object-cover"
           />
@@ -62,17 +62,17 @@ export default function Landing() {
             <motion.div
               key={i}
               className="absolute text-pink-300/30"
-              initial={{ 
-                x: Math.random() * window.innerWidth, 
-                y: window.innerHeight + 100 
+              initial={{
+                x: Math.random() * window.innerWidth,
+                y: window.innerHeight + 100
               }}
-              animate={{ 
-                y: -100, 
+              animate={{
+                y: -100,
                 rotate: 360,
                 x: `calc(${Math.random() * 100}px)`
               }}
-              transition={{ 
-                duration: 15 + Math.random() * 10, 
+              transition={{
+                duration: 15 + Math.random() * 10,
                 repeat: Infinity,
                 ease: "linear",
                 delay: i * 2
@@ -95,20 +95,20 @@ export default function Landing() {
 
           <div className="grid md:grid-cols-3 gap-8">
             {[
-              { 
-                icon: Shield, 
-                title: "Verified Profiles", 
-                desc: "Every profile is manually screened to ensure a safe and genuine community." 
+              {
+                icon: Shield,
+                title: "Verified Profiles",
+                desc: "Every profile is manually screened to ensure a safe and genuine community."
               },
-              { 
-                icon: Users, 
-                title: "Smart Matching", 
-                desc: "Our intelligent algorithm connects you with people who share your values." 
+              {
+                icon: Users,
+                title: "Smart Matching",
+                desc: "Our intelligent algorithm connects you with people who share your values."
               },
-              { 
-                icon: Star, 
-                title: "Success Stories", 
-                desc: "Thousands of successful marriages and counting. Be our next success story." 
+              {
+                icon: Star,
+                title: "Success Stories",
+                desc: "Thousands of successful marriages and counting. Be our next success story."
               }
             ].map((feature, idx) => (
               <motion.div
@@ -140,9 +140,9 @@ export default function Landing() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
             >
-              <h2 className="font-display text-4xl md:text-5xl font-bold mb-6">Your Journey to <br/>Happily Ever After</h2>
+              <h2 className="font-display text-4xl md:text-5xl font-bold mb-6">Your Journey to <br />Happily Ever After</h2>
               <p className="text-lg text-gray-600 mb-8">We've simplified the process of finding your life partner into three easy steps.</p>
-              
+
               <div className="space-y-8">
                 {[
                   { step: "01", title: "Create Profile", text: "Sign up and tell us about yourself and your preferences." },
@@ -161,7 +161,7 @@ export default function Landing() {
                 ))}
               </div>
             </motion.div>
-            
+
             <motion.div
               initial={{ opacity: 0, scale: 0.8 }}
               whileInView={{ opacity: 1, scale: 1 }}
@@ -170,16 +170,16 @@ export default function Landing() {
             >
               <div className="relative aspect-square rounded-full overflow-hidden border-8 border-white shadow-2xl max-w-md mx-auto">
                 {/* Wedding couple holding hands */}
-                <img 
-                  src="https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?q=80&w=2940&auto=format&fit=crop" 
-                  alt="Happy Couple" 
+                <img
+                  src="https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?q=80&w=2940&auto=format&fit=crop"
+                  alt="Happy Couple"
                   className="w-full h-full object-cover"
                 />
               </div>
               <div className="absolute -bottom-6 -right-6 bg-white p-6 rounded-2xl shadow-xl max-w-xs animate-bounce" style={{ animationDuration: '3s' }}>
                 <div className="flex items-center gap-3 mb-2">
                   <div className="flex -space-x-2">
-                    {[1,2,3].map(i => (
+                    {[1, 2, 3].map(i => (
                       <div key={i} className="w-8 h-8 rounded-full bg-gray-200 border-2 border-white" />
                     ))}
                   </div>
@@ -191,7 +191,7 @@ export default function Landing() {
           </div>
         </div>
       </section>
-      
+
       {/* CTA Footer */}
       <section className="py-24 px-4 bg-primary text-white text-center">
         <h2 className="font-display text-4xl md:text-5xl font-bold mb-6">Ready to find love?</h2>

@@ -1,109 +1,143 @@
-import { pgTable, text, serial, integer, boolean, timestamp, jsonb } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
-import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull(),
-  isAdmin: boolean("is_admin").default(false),
+export const insertUserSchema = z.object({
+  username: z.string().min(1, "Username is required"),
+  password: z.string().min(1, "Password is required"),
 });
 
-export const profiles = pgTable("profiles", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id),
-  fullName: text("full_name").notNull(),
-  age: integer("age").notNull(),
-  gender: text("gender").notNull(),
-  religion: text("religion").notNull(),
-  caste: text("caste"),
-  city: text("city").notNull(),
-  profession: text("profession"),
-  bio: text("bio"),
-  photoUrl: text("photo_url"),
-  isVerified: boolean("is_verified").default(false),
-  createdAt: timestamp("created_at").defaultNow(),
+export const insertPartnerPreferencesSchema = z.object({
+  maritalStatus: z.string().optional(),
+  religion: z.string().optional(),
+  education: z.string().optional(),
+  countries: z.array(z.string()).optional(),
+  ageMin: z.number().min(18).optional(),
+  ageMax: z.number().min(18).optional(),
+  drinking: z.string().optional(),
+  smoking: z.string().optional(),
+  residency: z.string().optional(),
+  diet: z.string().optional(),
 });
 
-export const interests = pgTable("interests", {
-  id: serial("id").primaryKey(),
-  senderId: integer("sender_id").notNull().references(() => users.id),
-  receiverId: integer("receiver_id").notNull().references(() => users.id),
-  status: text("status").notNull().default("pending"), // pending, accepted, rejected
-  createdAt: timestamp("created_at").defaultNow(),
+export const insertProfileSchema = z.object({
+  fullName: z.string().min(1, "Full Name is required"),
+  age: z.number().min(18, "Must be at least 18"),
+  gender: z.string().min(1, "Gender is required"),
+  religion: z.string().min(1, "Religion is required"),
+  caste: z.string().optional(),
+  city: z.string().min(1, "City is required"),
+  profession: z.string().optional(),
+  bio: z.string().optional(),
+  photoUrl: z.string().optional(),
+
+  // New Fields
+  dob: z.string().optional(), // ISO date string
+  education: z.string().optional(),
+  country: z.string().optional(), // Place of birth / Current Country
+  profileCreatedFor: z.string().optional(),
+  maritalStatus: z.string().optional(),
+  livingInIndiaSince: z.string().optional(),
+  placeOfBirth: z.string().optional(),
+  nationality: z.string().optional(),
+  visaStatus: z.string().optional(),
+  ethnicity: z.string().optional(),
+  income: z.string().optional(),
+  state: z.string().optional(),
+  livingWithFamily: z.boolean().optional(),
+  height: z.string().optional(),
+  weight: z.string().optional(),
+  bodyType: z.string().optional(),
+  familyStatus: z.string().optional(),
+  complexion: z.string().optional(),
+  diet: z.string().optional(),
+  drink: z.string().optional(),
+  smoke: z.string().optional(),
+
+  partnerPreferences: insertPartnerPreferencesSchema.optional(),
 });
 
-export const messages = pgTable("messages", {
-  id: serial("id").primaryKey(),
-  senderId: integer("sender_id").notNull().references(() => users.id),
-  receiverId: integer("receiver_id").notNull().references(() => users.id),
-  content: text("content").notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
+export const insertMessageSchema = z.object({
+  content: z.string().min(1, "Content cannot be empty"),
+  receiverId: z.string(),
 });
 
-export const usersRelations = relations(users, ({ one, many }) => ({
-  profile: one(profiles, {
-    fields: [users.id],
-    references: [profiles.userId],
-  }),
-  sentInterests: many(interests, { relationName: "sender" }),
-  receivedInterests: many(interests, { relationName: "receiver" }),
-  sentMessages: many(messages, { relationName: "sender" }),
-  receivedMessages: many(messages, { relationName: "receiver" }),
-}));
+export type InsertUser = z.infer<typeof insertUserSchema>;
+export type InsertProfile = z.infer<typeof insertProfileSchema>;
+export type InsertPartnerPreferences = z.infer<typeof insertPartnerPreferencesSchema>;
+export type InsertMessage = z.infer<typeof insertMessageSchema>;
 
-export const profilesRelations = relations(profiles, ({ one }) => ({
-  user: one(users, {
-    fields: [profiles.userId],
-    references: [users.id],
-  }),
-}));
+export type User = {
+  id: string;
+  username: string;
+  password: string;
+  isAdmin: boolean;
+};
 
-export const interestsRelations = relations(interests, ({ one }) => ({
-  sender: one(users, {
-    fields: [interests.senderId],
-    references: [users.id],
-    relationName: "sender",
-  }),
-  receiver: one(users, {
-    fields: [interests.receiverId],
-    references: [users.id],
-    relationName: "receiver",
-  }),
-}));
+export type PartnerPreferences = {
+  maritalStatus?: string;
+  religion?: string;
+  education?: string;
+  countries?: string[];
+  ageMin?: number;
+  ageMax?: number;
+  drinking?: string;
+  smoking?: string;
+  residency?: string;
+  diet?: string;
+};
 
-export const messagesRelations = relations(messages, ({ one }) => ({
-  sender: one(users, {
-    fields: [messages.senderId],
-    references: [users.id],
-    relationName: "sender",
-  }),
-  receiver: one(users, {
-    fields: [messages.receiverId],
-    references: [users.id],
-    relationName: "receiver",
-  }),
-}));
+export type Profile = {
+  id: string;
+  userId: string;
+  fullName: string;
+  age: number;
+  gender: string;
+  religion: string;
+  caste?: string | null;
+  city: string;
+  profession?: string | null;
+  bio?: string | null;
+  photoUrl?: string | null;
+  isVerified: boolean;
+  createdAt: Date;
 
-export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  password: true,
-});
+  // New Fields
+  dob?: string | null;
+  education?: string | null;
+  country?: string | null;
+  profileCreatedFor?: string | null;
+  maritalStatus?: string | null;
+  livingInIndiaSince?: string | null;
+  placeOfBirth?: string | null;
+  nationality?: string | null;
+  visaStatus?: string | null;
+  ethnicity?: string | null;
+  income?: string | null;
+  state?: string | null;
+  livingWithFamily?: boolean | null;
+  height?: string | null;
+  weight?: string | null;
+  bodyType?: string | null;
+  familyStatus?: string | null;
+  complexion?: string | null;
+  diet?: string | null;
+  drink?: string | null;
+  smoke?: string | null;
 
-export const insertProfileSchema = createInsertSchema(profiles).omit({
-  id: true,
-  userId: true,
-  createdAt: true,
-  isVerified: true
-});
+  partnerPreferences?: PartnerPreferences | null;
+};
 
-export const insertMessageSchema = createInsertSchema(messages).pick({
-  content: true,
-  receiverId: true,
-});
+export type Interest = {
+  id: string;
+  senderId: string;
+  receiverId: string;
+  status: string; // "pending" | "accepted" | "rejected"
+  createdAt: Date;
+};
 
-export type User = typeof users.$inferSelect;
-export type Profile = typeof profiles.$inferSelect;
-export type Interest = typeof interests.$inferSelect;
-export type Message = typeof messages.$inferSelect;
+export type Message = {
+  id: string;
+  senderId: string;
+  receiverId: string;
+  content: string;
+  createdAt: Date;
+};

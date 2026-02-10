@@ -24,18 +24,18 @@ export default function Dashboard() {
   }
 
   // Filter interests I received
-  const receivedRequests = interests?.filter(i => 
+  const receivedRequests = interests?.filter(i =>
     i.interest.receiverId === user?.id && i.interest.status === 'pending'
   ) || [];
 
-  const handleAction = (id: number, status: 'accepted' | 'rejected') => {
+  const handleAction = (id: string, status: 'accepted' | 'rejected') => {
     updateInterest.mutate({ id, status });
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Navigation />
-      
+
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
         <div className="mb-8">
           <h1 className="font-display text-3xl font-bold text-gray-900">
@@ -135,15 +135,15 @@ export default function Dashboard() {
                         </div>
                       </div>
                       <div className="flex gap-3">
-                        <Button 
+                        <Button
                           onClick={() => handleAction(req.interest.id, 'rejected')}
-                          variant="outline" 
+                          variant="outline"
                           className="rounded-full border-gray-200 hover:bg-red-50 hover:text-red-600 hover:border-red-200"
                         >
                           <XCircle className="w-4 h-4 mr-2" />
                           Decline
                         </Button>
-                        <Button 
+                        <Button
                           onClick={() => handleAction(req.interest.id, 'accepted')}
                           className="rounded-full bg-green-500 hover:bg-green-600 text-white shadow-lg shadow-green-500/20"
                         >

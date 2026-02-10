@@ -1,7 +1,11 @@
+import "dotenv/config";
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
+import { connectDB } from "./db";
+
+// ... (rest of imports/setup)
 
 const app = express();
 const httpServer = createServer(app);
@@ -60,7 +64,15 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  log("Starting server initialization...");
+
+  log("Connecting to MongoDB...");
+  await connectDB();
+  log("MongoDB connected successfully");
+
+  log("Registering routes...");
   await registerRoutes(httpServer, app);
+  log("Routes registered");
 
   app.use((err: any, _req: Request, res: Response, next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
@@ -89,12 +101,11 @@ app.use((req, res, next) => {
   // Other ports are firewalled. Default to 5000 if not specified.
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
-  const port = parseInt(process.env.PORT || "5000", 10);
+  const port = parseInt(process.env.PORT || "5001", 10);
   httpServer.listen(
     {
       port,
       host: "0.0.0.0",
-      reusePort: true,
     },
     () => {
       log(`serving on port ${port}`);

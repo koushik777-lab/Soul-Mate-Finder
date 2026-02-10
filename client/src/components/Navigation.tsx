@@ -18,9 +18,9 @@ export function Navigation() {
   const [isOpen, setIsOpen] = useState(false);
 
   const navItems = [
-    { label: "Matches", href: "/browse", icon: Heart },
-    { label: "Messages", href: "/messages", icon: MessageCircle },
-    { label: "Dashboard", href: "/dashboard", icon: User },
+    { label: "Home", href: "/browse", icon: Sparkles }, // Browse acts as Home/Feed
+    { label: "Matches", href: "/matches", icon: Heart },
+    { label: "Requests", href: "/requests", icon: User }, // Or explicit Requests icon
   ];
 
   return (
@@ -44,17 +44,16 @@ export function Navigation() {
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`flex items-center gap-2 text-sm font-medium transition-colors hover:text-primary ${
-                      location === item.href ? "text-primary" : "text-gray-600"
-                    }`}
+                    className={`flex items-center gap-2 text-sm font-medium transition-colors hover:text-primary ${location === item.href ? "text-primary" : "text-gray-600"
+                      }`}
                   >
                     <item.icon className="w-4 h-4" />
                     {item.label}
                   </Link>
                 ))}
-                
+
                 <div className="w-px h-6 bg-gray-200 mx-2" />
-                
+
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="relative h-10 w-10 rounded-full hover:bg-transparent">
@@ -68,6 +67,12 @@ export function Navigation() {
                     <DropdownMenuItem className="text-sm font-medium">
                       Signed in as @{user.username}
                     </DropdownMenuItem>
+                    <Link href="/dashboard">
+                      <DropdownMenuItem className="cursor-pointer font-medium">
+                        <User className="w-4 h-4 mr-2" />
+                        Dashboard
+                      </DropdownMenuItem>
+                    </Link>
                     {user.isAdmin && (
                       <Link href="/admin">
                         <DropdownMenuItem className="cursor-pointer">Admin Panel</DropdownMenuItem>
@@ -117,17 +122,16 @@ export function Navigation() {
                       <div className="space-y-2">
                         {navItems.map((item) => (
                           <Link key={item.href} href={item.href} onClick={() => setIsOpen(false)}>
-                            <div className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
-                              location === item.href ? "bg-pink-50 text-primary" : "hover:bg-gray-50 text-gray-600"
-                            }`}>
+                            <div className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${location === item.href ? "bg-pink-50 text-primary" : "hover:bg-gray-50 text-gray-600"
+                              }`}>
                               <item.icon className="w-5 h-5" />
                               <span className="font-medium">{item.label}</span>
                             </div>
                           </Link>
                         ))}
                       </div>
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         className="w-full mt-4 border-pink-200 text-pink-600 hover:bg-pink-50 hover:text-pink-700"
                         onClick={() => {
                           logout();

@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 export default function Messages() {
   const { user } = useAuth();
   const { data: conversations, isLoading: loadingConvos } = useConversations();
-  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
   useEffect(() => {
     if (conversations && conversations.length > 0 && !selectedUserId) {
@@ -26,7 +26,7 @@ export default function Messages() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Navigation />
-      
+
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-24 h-[calc(100vh-64px)]">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-full">
           {/* Conversation List */}
@@ -50,8 +50,8 @@ export default function Messages() {
                     onClick={() => setSelectedUserId(profile.userId)}
                     className={cn(
                       "w-full flex items-center gap-3 p-3 rounded-xl transition-all text-left",
-                      selectedUserId === profile.userId 
-                        ? "bg-pink-50 border border-pink-100 shadow-sm" 
+                      selectedUserId === profile.userId
+                        ? "bg-pink-50 border border-pink-100 shadow-sm"
                         : "hover:bg-gray-50 border border-transparent"
                     )}
                   >
@@ -72,8 +72,8 @@ export default function Messages() {
           {/* Chat Window */}
           <div className="md:col-span-2 h-full">
             {selectedUserId && selectedProfile ? (
-              <ChatWindow 
-                recipientId={selectedUserId} 
+              <ChatWindow
+                recipientId={selectedUserId}
                 recipientName={selectedProfile.fullName}
                 recipientPhoto={selectedProfile.photoUrl || undefined}
                 currentUserId={user!.id}
@@ -92,16 +92,16 @@ export default function Messages() {
   );
 }
 
-function ChatWindow({ 
-  recipientId, 
-  recipientName, 
+function ChatWindow({
+  recipientId,
+  recipientName,
   recipientPhoto,
-  currentUserId 
-}: { 
-  recipientId: number;
+  currentUserId
+}: {
+  recipientId: string;
   recipientName: string;
   recipientPhoto?: string;
-  currentUserId: number;
+  currentUserId: string;
 }) {
   const { data: messages, isLoading } = useMessages(recipientId);
   const sendMessage = useSendMessage();
@@ -148,11 +148,11 @@ function ChatWindow({
             const isMe = msg.senderId === currentUserId;
             return (
               <div key={msg.id} className={cn("flex", isMe ? "justify-end" : "justify-start")}>
-                <div 
+                <div
                   className={cn(
                     "max-w-[75%] px-4 py-2 rounded-2xl shadow-sm text-sm",
-                    isMe 
-                      ? "bg-primary text-white rounded-tr-none" 
+                    isMe
+                      ? "bg-primary text-white rounded-tr-none"
                       : "bg-white text-gray-800 border border-gray-100 rounded-tl-none"
                   )}
                 >
@@ -169,7 +169,7 @@ function ChatWindow({
 
       {/* Input */}
       <div className="p-4 bg-white border-t border-pink-50">
-        <form 
+        <form
           onSubmit={(e) => { e.preventDefault(); handleSend(); }}
           className="flex gap-2"
         >
@@ -179,9 +179,9 @@ function ChatWindow({
             placeholder="Type your message..."
             className="rounded-full bg-gray-50 border-gray-200 focus:ring-primary/20"
           />
-          <Button 
-            type="submit" 
-            size="icon" 
+          <Button
+            type="submit"
+            size="icon"
             className="rounded-full bg-primary hover:bg-pink-600 shadow-md shadow-pink-500/20"
             disabled={!inputText.trim() || sendMessage.isPending}
           >

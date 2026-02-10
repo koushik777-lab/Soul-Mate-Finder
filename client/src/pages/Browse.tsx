@@ -18,7 +18,13 @@ import { useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function Browse() {
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState<{
+    ageMin?: number;
+    ageMax?: number;
+    religion?: string;
+    city?: string;
+    gender?: string;
+  }>({
     ageMin: undefined,
     ageMax: undefined,
     religion: undefined,
@@ -31,27 +37,29 @@ export default function Browse() {
   const sendInterest = useSendInterest();
 
   // Filter out my own profile and already interacted profiles
+  // Filter out my own profile, already interacted profiles, and SAME gender profiles
   const filteredProfiles = profiles?.filter(p => {
     const isMe = p.userId === myProfile?.userId;
-    const hasInteracted = interests?.some(i => i.profile.userId === p.userId); // Simplified check
-    return !isMe;
+    const hasInteracted = interests?.some(i => i.profile.userId === p.userId);
+    const isSameGender = myProfile?.gender && p.gender === myProfile.gender;
+    return !isMe && !isSameGender; // Show only opposite gender (or just not same gender)
   });
 
-  const handleSendInterest = (id: number) => {
+  const handleSendInterest = (id: string) => {
     sendInterest.mutate(id);
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Navigation />
-      
+
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <div>
-            <h1 className="text-3xl font-display font-bold text-gray-900">Discover Matches</h1>
-            <p className="text-gray-500 mt-1">Found {filteredProfiles?.length || 0} profiles matching your preferences</p>
+            <h1 className="text-3xl font-display font-bold text-gray-900">Find Your Soul Mate</h1>
+            <p className="text-gray-500 mt-1">Discover {myProfile?.gender === 'male' ? 'Female' : 'Male'} profiles matching your preferences</p>
           </div>
-          
+
           <Sheet>
             <SheetTrigger asChild>
               <Button variant="outline" className="gap-2 border-pink-200 hover:bg-pink-50 text-pink-700">
@@ -63,20 +71,20 @@ export default function Browse() {
                 <SheetTitle className="font-display text-2xl">Filter Profiles</SheetTitle>
                 <SheetDescription>Refine your search to find the perfect match.</SheetDescription>
               </SheetHeader>
-              
+
               <div className="py-6 space-y-6">
                 <div className="space-y-2">
                   <Label>Age Range</Label>
                   <div className="flex gap-4">
-                    <Input 
-                      type="number" 
-                      placeholder="Min" 
+                    <Input
+                      type="number"
+                      placeholder="Min"
                       className="rounded-lg"
                       onChange={(e) => setFilters(prev => ({ ...prev, ageMin: e.target.value ? parseInt(e.target.value) : undefined }))}
                     />
-                    <Input 
-                      type="number" 
-                      placeholder="Max" 
+                    <Input
+                      type="number"
+                      placeholder="Max"
                       className="rounded-lg"
                       onChange={(e) => setFilters(prev => ({ ...prev, ageMax: e.target.value ? parseInt(e.target.value) : undefined }))}
                     />
@@ -101,8 +109,8 @@ export default function Browse() {
 
                 <div className="space-y-2">
                   <Label>City</Label>
-                  <Input 
-                    placeholder="Enter city..." 
+                  <Input
+                    placeholder="Enter city..."
                     className="rounded-lg"
                     onChange={(e) => setFilters(prev => ({ ...prev, city: e.target.value || undefined }))}
                   />
@@ -131,11 +139,12 @@ export default function Browse() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredProfiles?.map((profile) => (
-              <ProfileCard 
-                key={profile.id} 
-                profile={profile} 
+              <ProfileCard
+                key={profile.id}
+                profile={profile}
                 onSendInterest={handleSendInterest}
                 isInterestPending={interests?.some(i => i.interest.receiverId === profile.userId)}
+                variant="feed"
               />
             ))}
           </div>

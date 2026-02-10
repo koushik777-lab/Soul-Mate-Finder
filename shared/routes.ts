@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import { insertUserSchema, insertProfileSchema, insertMessageSchema, profiles, messages, interests } from './schema';
+export * from './schema';
+import { insertUserSchema, insertProfileSchema, insertMessageSchema, type Profile, type Interest, type Message, type User } from './schema';
 
 export const errorSchemas = {
   validation: z.object({
@@ -21,7 +22,7 @@ export const api = {
       path: '/api/register' as const,
       input: insertUserSchema,
       responses: {
-        201: z.object({ id: z.number(), username: z.string() }),
+        201: z.object({ id: z.string(), username: z.string() }),
         400: errorSchemas.validation,
       },
     },
@@ -30,7 +31,7 @@ export const api = {
       path: '/api/login' as const,
       input: insertUserSchema,
       responses: {
-        200: z.object({ id: z.number(), username: z.string() }),
+        200: z.object({ id: z.string(), username: z.string() }),
         401: errorSchemas.unauthorized,
       },
     },
@@ -45,7 +46,7 @@ export const api = {
       method: 'GET' as const,
       path: '/api/user' as const,
       responses: {
-        200: z.object({ id: z.number(), username: z.string(), isAdmin: z.boolean().optional() }),
+        200: z.object({ id: z.string(), username: z.string(), isAdmin: z.boolean().optional() }),
         401: errorSchemas.unauthorized,
       },
     },
@@ -56,7 +57,7 @@ export const api = {
       path: '/api/profiles' as const,
       input: insertProfileSchema,
       responses: {
-        201: z.custom<typeof profiles.$inferSelect>(),
+        201: z.custom<Profile>(),
         400: errorSchemas.validation,
       },
     },
@@ -71,14 +72,14 @@ export const api = {
         gender: z.string().optional(),
       }).optional(),
       responses: {
-        200: z.array(z.custom<typeof profiles.$inferSelect>()),
+        200: z.array(z.custom<Profile>()),
       },
     },
     get: {
       method: 'GET' as const,
       path: '/api/profiles/:id' as const,
       responses: {
-        200: z.custom<typeof profiles.$inferSelect>(),
+        200: z.custom<Profile>(),
         404: errorSchemas.notFound,
       },
     },
@@ -86,18 +87,18 @@ export const api = {
       method: 'GET' as const,
       path: '/api/my-profile' as const,
       responses: {
-        200: z.custom<typeof profiles.$inferSelect>(),
+        200: z.custom<Profile>(),
         404: errorSchemas.notFound,
       },
-    }
+    },
   },
   interests: {
     send: {
       method: 'POST' as const,
       path: '/api/interests' as const,
-      input: z.object({ receiverId: z.number() }),
+      input: z.object({ receiverId: z.string() }),
       responses: {
-        201: z.custom<typeof interests.$inferSelect>(),
+        201: z.custom<Interest>(),
         400: errorSchemas.validation,
       },
     },
@@ -106,8 +107,8 @@ export const api = {
       path: '/api/interests' as const,
       responses: {
         200: z.array(z.object({
-          interest: z.custom<typeof interests.$inferSelect>(),
-          profile: z.custom<typeof profiles.$inferSelect>(),
+          interest: z.custom<Interest>(),
+          profile: z.custom<Profile>(),
         })),
       },
     },
@@ -116,7 +117,7 @@ export const api = {
       path: '/api/interests/:id' as const,
       input: z.object({ status: z.enum(['accepted', 'rejected']) }),
       responses: {
-        200: z.custom<typeof interests.$inferSelect>(),
+        200: z.custom<Interest>(),
         404: errorSchemas.notFound,
       },
     },
@@ -126,7 +127,7 @@ export const api = {
       method: 'GET' as const,
       path: '/api/messages/:userId' as const,
       responses: {
-        200: z.array(z.custom<typeof messages.$inferSelect>()),
+        200: z.array(z.custom<Message>()),
       },
     },
     send: {
@@ -134,16 +135,16 @@ export const api = {
       path: '/api/messages' as const,
       input: insertMessageSchema,
       responses: {
-        201: z.custom<typeof messages.$inferSelect>(),
+        201: z.custom<Message>(),
       },
     },
     history: {
       method: 'GET' as const,
       path: '/api/conversations' as const, // List of users we have chatted with
       responses: {
-        200: z.array(z.custom<typeof profiles.$inferSelect>()),
+        200: z.array(z.custom<Profile>()),
       },
-    }
+    },
   },
   admin: {
     listUsers: {
@@ -151,12 +152,12 @@ export const api = {
       path: '/api/admin/users' as const,
       responses: {
         200: z.array(z.object({
-          user: z.any(),
+          user: z.custom<User>(),
           profile: z.any(),
         })),
       },
     },
-  }
+  },
 };
 
 export function buildUrl(path: string, params?: Record<string, string | number>): string {

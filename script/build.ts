@@ -30,6 +30,8 @@ const allowlist = [
   "xlsx",
   "zod",
   "zod-validation-error",
+  "connect-mongo",
+  "mongoose",
 ];
 
 async function buildAll() {

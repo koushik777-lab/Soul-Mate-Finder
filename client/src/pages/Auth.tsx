@@ -17,24 +17,21 @@ import {
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useCreateProfile } from "@/hooks/use-profiles";
 import { Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
+import { IoMale, IoFemale } from "react-icons/io5";
 
 export default function Auth() {
   const [activeTab, setActiveTab] = useState("login");
   const { login, register, isLoggingIn, isRegistering, user } = useAuth();
-  const createProfile = useCreateProfile();
   const [, setLocation] = useLocation();
 
   // If already logged in, redirect
   if (user) {
     if (!user.isAdmin) {
-       // Check if profile exists, if not show profile creation form
-       // For simplicity, we'll assume the user is redirected to dashboard
-       setLocation("/dashboard"); 
+      // Check if profile exists, if not show profile creation form
+      // For simplicity, we'll assume the user is redirected to dashboard
+      setLocation("/dashboard");
     }
     return null;
   }
@@ -45,10 +42,10 @@ export default function Auth() {
       <div className="hidden lg:block relative h-full">
         <div className="absolute inset-0 bg-primary/20 mix-blend-multiply z-10" />
         {/* Elegant flower background */}
-        <img 
-          src="https://pixabay.com/get/gcbe4053a0a3ff56b0b72a389a985379dead521b71798162981a12efc2917a2378c064e4f9783aba42ecf9a03c7554519e98b1b9e618c66030e49dcf682e3d99c_1280.png" 
-          className="absolute inset-0 w-full h-full object-cover" 
-          alt="Flowers" 
+        <img
+          src="/auth_bg.png"
+          className="absolute inset-0 w-full h-full object-cover"
+          alt="Flowers"
         />
         <div className="absolute inset-0 flex items-center justify-center z-20 text-white p-12">
           <div className="max-w-md">
@@ -83,16 +80,16 @@ export default function Auth() {
               transition={{ duration: 0.3 }}
             >
               <TabsContent value="login">
-                <LoginForm onLogin={(data) => login(data)} isLoading={isLoggingIn} />
+                <LoginForm onLogin={async (data) => { await login(data); }} isLoading={isLoggingIn} />
               </TabsContent>
               <TabsContent value="register">
-                <RegisterForm 
+                <RegisterForm
                   onRegister={async (data) => {
                     await register(data);
                     // After register, user is logged in, show profile creation wizard
                     // But for now, we just let the auth hook handle state update
-                  }} 
-                  isLoading={isRegistering} 
+                  }}
+                  isLoading={isRegistering}
                 />
               </TabsContent>
             </motion.div>
@@ -158,8 +155,8 @@ function LoginForm({ onLogin, isLoading }: { onLogin: (data: any) => Promise<voi
 function RegisterForm({ onRegister, isLoading }: { onRegister: (data: any) => Promise<void>, isLoading: boolean }) {
   const [step, setStep] = useState(1);
   const [creds, setCreds] = useState<any>(null);
+  const [selectedGender, setSelectedGender] = useState<"male" | "female">("female");
   const { user } = useAuth(); // Will be set after step 1
-  const createProfile = useCreateProfile();
   const [, setLocation] = useLocation();
 
   const userForm = useForm({
@@ -167,217 +164,82 @@ function RegisterForm({ onRegister, isLoading }: { onRegister: (data: any) => Pr
     defaultValues: { username: "", password: "" }
   });
 
-  const profileForm = useForm({
-    resolver: zodResolver(insertProfileSchema),
-    defaultValues: {
-      fullName: "",
-      age: 25,
-      gender: "female",
-      religion: "Hindu",
-      city: "",
-      bio: "",
-      photoUrl: "",
-      caste: "",
-      profession: ""
-    }
-  });
+  /* 
+    Simplified RegisterForm:
+    1. Register User (including gender selection for avatar logic later, but for now we just register user).
+    2. Redirect to Profile Wizard.
+  */
 
   const handleUserSubmit = async (data: any) => {
     try {
       await onRegister(data);
-      setCreds(data);
-      setStep(2);
+      // We can also save the selected gender to localStorage to pre-fill the wizard
+      localStorage.setItem("registration_gender", selectedGender);
+      setLocation("/profile-wizard");
     } catch (e) {
       console.error(e);
     }
   };
-
-  const handleProfileSubmit = async (data: any) => {
-    try {
-      await createProfile.mutateAsync(data);
-      setLocation("/dashboard");
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  if (step === 1) {
-    return (
-      <Card className="border-none shadow-none">
-        <CardHeader className="px-0">
-          <CardTitle className="text-2xl font-display">Create Account</CardTitle>
-          <CardDescription>Join our community today</CardDescription>
-        </CardHeader>
-        <CardContent className="px-0">
-          <Form {...userForm}>
-            <form onSubmit={userForm.handleSubmit(handleUserSubmit)} className="space-y-4">
-              <FormField
-                control={userForm.control}
-                name="username"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Choose Username</FormLabel>
-                    <FormControl>
-                      <Input {...field} className="rounded-xl h-12 bg-gray-50 border-gray-200 focus:border-primary focus:ring-primary/20" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={userForm.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Choose Password</FormLabel>
-                    <FormControl>
-                      <Input type="password" {...field} className="rounded-xl h-12 bg-gray-50 border-gray-200 focus:border-primary focus:ring-primary/20" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button type="submit" className="w-full h-12 rounded-xl btn-romantic text-lg" disabled={isLoading}>
-                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Next Step
-              </Button>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
     <Card className="border-none shadow-none">
       <CardHeader className="px-0">
-        <CardTitle className="text-2xl font-display">Complete Profile</CardTitle>
-        <CardDescription>Tell us a bit about yourself</CardDescription>
+        <CardTitle className="text-2xl font-display">Create Account</CardTitle>
+        <CardDescription>Join our community today</CardDescription>
       </CardHeader>
-      <CardContent className="px-0 h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-        <Form {...profileForm}>
-          <form onSubmit={profileForm.handleSubmit(handleProfileSubmit)} className="space-y-4">
+      <CardContent className="px-0">
+        <Form {...userForm}>
+          <form onSubmit={userForm.handleSubmit(handleUserSubmit)} className="space-y-4">
             <FormField
-              control={profileForm.control}
-              name="fullName"
+              control={userForm.control}
+              name="username"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Full Name</FormLabel>
+                  <FormLabel>Choose Username</FormLabel>
                   <FormControl>
-                    <Input {...field} className="rounded-xl" />
+                    <Input {...field} className="rounded-xl h-12 bg-gray-50 border-gray-200 focus:border-primary focus:ring-primary/20" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={profileForm.control}
-                name="age"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Age</FormLabel>
-                    <FormControl>
-                      <Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value))} className="rounded-xl" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={profileForm.control}
-                name="gender"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Gender</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger className="rounded-xl">
-                          <SelectValue placeholder="Select" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="male">Male</SelectItem>
-                        <SelectItem value="female">Female</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
             <FormField
-              control={profileForm.control}
-              name="religion"
+              control={userForm.control}
+              name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Religion</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger className="rounded-xl">
-                        <SelectValue placeholder="Select" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="Hindu">Hindu</SelectItem>
-                      <SelectItem value="Muslim">Muslim</SelectItem>
-                      <SelectItem value="Christian">Christian</SelectItem>
-                      <SelectItem value="Sikh">Sikh</SelectItem>
-                      <SelectItem value="Other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={profileForm.control}
-              name="city"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>City</FormLabel>
+                  <FormLabel>Choose Password</FormLabel>
                   <FormControl>
-                    <Input {...field} className="rounded-xl" />
+                    <Input type="password" {...field} className="rounded-xl h-12 bg-gray-50 border-gray-200 focus:border-primary focus:ring-primary/20" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
-            <FormField
-              control={profileForm.control}
-              name="bio"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Bio (Short description)</FormLabel>
-                  <FormControl>
-                    <Textarea {...field} className="rounded-xl resize-none" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <FormItem>
+              <FormLabel>I am a</FormLabel>
+              <div className="grid grid-cols-2 gap-4 mt-2">
+                <div
+                  onClick={() => setSelectedGender("male")}
+                  className={`cursor-pointer flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${selectedGender === 'male' ? 'border-primary bg-primary/5 text-primary' : 'border-gray-100 hover:border-pink-200'}`}
+                >
+                  <IoMale className="w-8 h-8 mb-2" />
+                  <span className="font-medium">Male</span>
+                </div>
+                <div
+                  onClick={() => setSelectedGender("female")}
+                  className={`cursor-pointer flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${selectedGender === 'female' ? 'border-primary bg-primary/5 text-primary' : 'border-gray-100 hover:border-pink-200'}`}
+                >
+                  <IoFemale className="w-8 h-8 mb-2" />
+                  <span className="font-medium">Female</span>
+                </div>
+              </div>
+            </FormItem>
 
-            <FormField
-              control={profileForm.control}
-              name="photoUrl"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Photo URL</FormLabel>
-                  <FormControl>
-                    <Input {...field} placeholder="https://..." className="rounded-xl" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <Button type="submit" className="w-full h-12 rounded-xl btn-romantic" disabled={createProfile.isPending}>
-              {createProfile.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Complete Profile
+            <Button type="submit" className="w-full h-12 rounded-xl btn-romantic text-lg" disabled={isLoading}>
+              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Get Started
             </Button>
           </form>
         </Form>

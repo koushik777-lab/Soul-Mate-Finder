@@ -4,11 +4,12 @@ import { useToast } from "@/hooks/use-toast";
 
 // === INTERESTS ===
 
-export function useInterests() {
+export function useInterests(type: 'sent' | 'received' | 'matches' = 'received') {
   return useQuery({
-    queryKey: [api.interests.list.path],
+    queryKey: [api.interests.list.path, type],
     queryFn: async () => {
-      const res = await fetch(api.interests.list.path);
+      const url = `${api.interests.list.path}?type=${type}`;
+      const res = await fetch(url);
       if (!res.ok) throw new Error("Failed to fetch interests");
       return api.interests.list.responses[200].parse(await res.json());
     },
@@ -20,7 +21,7 @@ export function useSendInterest() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (receiverId: number) => {
+    mutationFn: async (receiverId: string) => {
       const res = await fetch(api.interests.send.path, {
         method: api.interests.send.method,
         headers: { "Content-Type": "application/json" },
@@ -44,7 +45,7 @@ export function useUpdateInterest() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async ({ id, status }: { id: number; status: 'accepted' | 'rejected' }) => {
+    mutationFn: async ({ id, status }: { id: string; status: 'accepted' | 'rejected' }) => {
       const url = buildUrl(api.interests.update.path, { id });
       const res = await fetch(url, {
         method: api.interests.update.method,
@@ -74,7 +75,7 @@ export function useConversations() {
   });
 }
 
-export function useMessages(userId: number | null) {
+export function useMessages(userId: string | null) {
   return useQuery({
     queryKey: [api.messages.list.path, userId],
     enabled: !!userId,
@@ -91,7 +92,7 @@ export function useMessages(userId: number | null) {
 
 export function useSendMessage() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (data: InsertMessage) => {
       const res = await fetch(api.messages.send.path, {
@@ -103,8 +104,8 @@ export function useSendMessage() {
       return api.messages.send.responses[201].parse(await res.json());
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ 
-        queryKey: [api.messages.list.path, variables.receiverId] 
+      queryClient.invalidateQueries({
+        queryKey: [api.messages.list.path, variables.receiverId]
       });
     },
   });
