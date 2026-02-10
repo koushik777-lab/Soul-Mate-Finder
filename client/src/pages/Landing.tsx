@@ -49,7 +49,7 @@ export default function Landing() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/auth">
                 <Button size="lg" className="rounded-full px-8 py-6 text-lg btn-romantic">
-                  Start Your Journey <ArrowRight className="ml-2 w-5 h-5" />
+                  Start Journey <ArrowRight className="ml-2 w-5 h-5" />
                 </Button>
               </Link>
             </div>
