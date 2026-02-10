@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertUserSchema, insertProfileSchema } from "@shared/schema";
@@ -17,7 +17,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
+import { Loader2, ArrowLeft } from "lucide-react";
 import { motion } from "framer-motion";
 import { IoMale, IoFemale } from "react-icons/io5";
 
@@ -56,7 +56,22 @@ export default function Auth() {
       </div>
 
       {/* Right Panel - Forms */}
-      <div className="flex items-center justify-center p-6 bg-white">
+      <div className="flex items-center justify-center p-6 bg-white relative">
+        <Link href="/">
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.3 }}
+            className="absolute top-6 left-6 cursor-pointer group flex items-center gap-2"
+          >
+            <div className="p-2 rounded-full bg-gray-50 group-hover:bg-pink-50 transition-colors duration-300">
+              <ArrowLeft className="w-5 h-5 text-gray-500 group-hover:text-primary transition-colors duration-300 group-hover:-translate-x-1 transform" />
+            </div>
+            <span className="font-medium text-gray-500 group-hover:text-primary transition-all duration-300 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0">
+              Back to Home
+            </span>
+          </motion.div>
+        </Link>
         <div className="w-full max-w-md">
           <div className="text-center mb-8 lg:hidden">
             <h1 className="font-display text-4xl font-bold text-primary">SoulMate</h1>
